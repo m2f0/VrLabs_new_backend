@@ -76,6 +76,24 @@ app.get("/list-htmls", (req: Request, res: Response) => {
   });
 });
 
+app.delete("/delete-html/:filename", (req, res) => {
+  const { filename } = req.params;
+  const filePath = path.join(__dirname, "HTMLs", filename);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send("Arquivo não encontrado.");
+  }
+
+  fs.unlink(filePath, (err) => {
+    if (err) {
+      console.error("Erro ao excluir o arquivo:", err);
+      return res.status(500).send("Erro ao excluir o arquivo.");
+    }
+
+    res.send("Arquivo excluído com sucesso.");
+  });
+});
+
 // Endpoint inicial
 app.get("/", (req, res) => {
   res.send("Hello CodeSandbox!");

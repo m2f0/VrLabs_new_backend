@@ -1,0 +1,49 @@
+
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Laboratórios</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+          }
+          .vm-container {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+          }
+          .vm-buttons button {
+            margin-right: 10px;
+            padding: 10px;
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+          }
+          .vm-buttons button:hover {
+            background-color: #1565c0;
+          }
+        </style>
+        <script src="https://jm7xgg-3000.csb.app/HTMLs/script.js"></script>
+      </head>
+      <body>
+        <h1>Gerenciador de VMs</h1>
+        
+            <div class="vm-container">
+              <p>VM: monitor (ID: 100)</p>
+              <div class="vm-buttons">
+                <button onclick="createLab('100', 'prox1', 'monitor')">Criar Laboratório</button>
+                <button onclick="startVM('100', 'prox1')">Start</button>
+                <button onclick="stopVM('100', 'prox1')">Stop</button>
+                <button onclick="connectVM('100', 'prox1')">Connect</button>
+              </div>
+            </div>
+          
+      </body>
+      </html>
+    
