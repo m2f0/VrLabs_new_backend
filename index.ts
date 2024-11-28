@@ -4,7 +4,13 @@ import path from "path";
 import cors from "cors";
 
 const app = express(); // Inicialize o app antes de configurar os middlewares
+const directoryPath = path.join(__dirname, "HTMLs"); // Caminho do diretório HTMLs
+const scriptFilePath = path.join(directoryPath, "script.js"); // Caminho para o arquivo script.js
+
 const port = 3000;
+
+// Configura o Express para servir arquivos estáticos
+app.use("/HTMLs", express.static(directoryPath));
 
 // Middleware para CORS
 app.use(
@@ -16,6 +22,25 @@ app.use(
 // Middleware para processar JSON no corpo das requisições
 app.use(express.json());
 
+// Certifique-se de que a pasta HTMLs existe
+if (!fs.existsSync(directoryPath)) {
+  fs.mkdirSync(directoryPath, { recursive: true });
+}
+
+// Certifique-se de que o script.js existe
+if (!fs.existsSync(scriptFilePath)) {
+  fs.writeFileSync(
+    scriptFilePath,
+    `
+    console.log("Script carregado com sucesso!");
+
+    function handleButtonClick() {
+      alert("Botão clicado no script externo!");
+    }
+    `
+  );
+}
+
 // Endpoint para salvar HTMLs
 app.post("/save-html", (req: Request, res: Response) => {
   const { filename, content } = req.body;
@@ -24,13 +49,7 @@ app.post("/save-html", (req: Request, res: Response) => {
     return res.status(400).send("Filename and content are required.");
   }
 
-  const directoryPath = path.join(__dirname, "HTMLs");
   const filePath = path.join(directoryPath, filename);
-
-  // Certifique-se de que o diretório existe
-  if (!fs.existsSync(directoryPath)) {
-    fs.mkdirSync(directoryPath, { recursive: true });
-  }
 
   // Salvar o arquivo
   fs.writeFile(filePath, content, (err) => {
@@ -40,6 +59,20 @@ app.post("/save-html", (req: Request, res: Response) => {
     }
 
     res.send("Arquivo HTML salvo com sucesso.");
+  });
+});
+
+// Endpoint para listar os arquivos existentes no diretório HTMLs
+app.get("/list-htmls", (req: Request, res: Response) => {
+  // Ler os arquivos do diretório
+  fs.readdir(directoryPath, (err, files) => {
+    if (err) {
+      console.error("Erro ao listar os arquivos:", err);
+      return res.status(500).send("Erro ao listar os arquivos.");
+    }
+
+    // Retornar a lista de arquivos como JSON
+    res.json({ files });
   });
 });
 
