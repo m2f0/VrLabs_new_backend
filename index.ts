@@ -24,7 +24,7 @@ app.post("/save-html", (req: Request, res: Response) => {
     return res.status(400).send("Filename and content are required.");
   }
 
-  const directoryPath = path.join(__dirname, "project", "workspace", "HTMLs");
+  const directoryPath = path.join(__dirname, "HTMLs");
   const filePath = path.join(directoryPath, filename);
 
   // Certifique-se de que o diretório existe
