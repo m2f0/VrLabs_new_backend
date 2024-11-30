@@ -1,11 +1,12 @@
-import express, { Request, Response } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import fs from "fs";
 import path from "path";
 import cors from "cors";
 
-const app = express(); // Inicialize o app antes de configurar os middlewares
-const directoryPath = path.join(__dirname, "HTMLs"); // Caminho do diretório HTMLs
-const scriptFilePath = path.join(directoryPath, "script.js"); // Caminho para o arquivo script.js
+const app = express();
+const directoryPath = path.join(__dirname, "HTMLs");
+const scriptFilePath = path.join(directoryPath, "script.js");
+const logFilePath = path.join(__dirname, "logs.txt");
 
 const port = 3000;
 
@@ -15,7 +16,7 @@ app.use("/HTMLs", express.static(directoryPath));
 // Middleware para CORS
 app.use(
   cors({
-    origin: "https://gckyrp-3000.csb.app/", // Permite apenas o frontend especificado
+    origin: "https://gckyrp-3000.csb.app", // Origem ajustada
   })
 );
 
@@ -40,6 +41,35 @@ if (!fs.existsSync(scriptFilePath)) {
     `
   );
 }
+
+// Certifique-se de que o arquivo de log existe
+if (!fs.existsSync(logFilePath)) {
+  fs.writeFileSync(logFilePath, "");
+}
+
+// Middleware para registrar logs
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const timestamp = new Date().toISOString();
+  const client =
+    req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
+  const route = req.originalUrl;
+
+  // Interceptar a resposta para registrar o status
+  const originalSend = res.send;
+  res.send = function (body) {
+    const status = res.statusCode < 400 ? "OK" : "ERROR";
+    const logEntry = `${timestamp} - ${client} - ${route} - ${status}\n`;
+
+    // Escrever no log
+    fs.appendFile(logFilePath, logEntry, (err) => {
+      if (err) console.error("Erro ao escrever no log:", err);
+    });
+
+    return originalSend.call(this, body);
+  };
+
+  next();
+});
 
 // Endpoint para salvar HTMLs
 app.post("/save-html", (req: Request, res: Response) => {
@@ -94,9 +124,42 @@ app.delete("/delete-html/:filename", (req, res) => {
   });
 });
 
-// Endpoint inicial
+// Endpoint inicial - Exibe os logs em ordem do mais antigo para o mais recente
 app.get("/", (req, res) => {
-  res.send("Hello CodeSandbox!");
+  fs.readFile(logFilePath, "utf8", (err, data) => {
+    if (err) {
+      console.error("Erro ao ler o log:", err);
+      return res.status(500).send("Erro ao ler o log.");
+    }
+
+    // HTML para exibir os logs e recarregar a página automaticamente
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Logs</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.5; }
+          pre { background-color: #f4f4f4; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        </style>
+        <script>
+          setTimeout(() => {
+            window.location.reload();
+          }, 5000); // Recarregar a cada 5 segundos
+        </script>
+      </head>
+      <body>
+        <h1>Logs de Utilização</h1>
+        <pre>${data || "Nenhum log disponível."}</pre>
+      </body>
+      </html>
+    `;
+
+    res.setHeader("Content-Type", "text/html");
+    res.send(htmlContent);
+  });
 });
 
 // Inicializar o servidor

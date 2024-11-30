@@ -1,0 +1,153 @@
+
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Laboratórios</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .vm-container { margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+          .vm-buttons { margin-top: 10px; }
+          .vm-buttons button { margin-right: 10px; padding: 10px; background-color: #1976d2; color: white; border: none; border-radius: 5px; cursor: pointer; }
+          .vm-buttons button:hover { background-color: #1565c0; }
+          .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin: 10px auto;
+          }
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          #connect-button {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+          }
+          #connect-button:hover {
+            background-color: #45a049;
+          }
+        </style>
+        <script>
+          async function startLab(vmid, node, name) {
+            const newVmId = prompt("Digite o ID do novo Linked Clone:");
+            if (!newVmId) {
+              alert("ID do novo Linked Clone é obrigatório.");
+              return;
+            }
+  
+            const API_BASE_URL = "https://prox.nnovup.com.br";
+            const API_TOKEN = "58fc95f1-afc7-47e6-8b7a-31e6971062ca";
+            const API_USER = "apiuser@pve";
+  
+            async function createClone() {
+              try {
+                const response = await fetch(
+                  `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/clone`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/x-www-form-urlencoded",
+                      Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+                    },
+                    body: new URLSearchParams({
+                      newid: newVmId,
+                      name: `${name}-lab-${newVmId}`,
+                      snapname: "SNAP_1",
+                      full: 0,
+                    }),
+                  }
+                );
+  
+                if (!response.ok) {
+                  throw new Error(`Erro ao criar o Linked Clone: ${response.status} ${response.statusText}`);
+                }
+  
+                alert("Linked Clone criado com sucesso!");
+                return true;
+              } catch (error) {
+                console.error("Erro ao criar Linked Clone:", error);
+                alert("Erro ao criar Linked Clone.");
+                return false;
+              }
+            }
+  
+            async function startClone() {
+              try {
+                const response = await fetch(
+                  `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${newVmId}/status/start`,
+                  {
+                    method: "POST",
+                    headers: {
+                      Authorization: `PVEAPIToken=${API_USER}!apitoken=${API_TOKEN}`,
+                    },
+                  }
+                );
+  
+                if (!response.ok) {
+                  throw new Error(`Erro ao iniciar o Linked Clone: ${response.status} ${response.statusText}`);
+                }
+  
+                alert("Linked Clone iniciado com sucesso!");
+                return true;
+              } catch (error) {
+                console.error("Erro ao iniciar Linked Clone:", error);
+                alert("Erro ao iniciar Linked Clone.");
+                return false;
+              }
+            }
+  
+            function showSpinnerAndConnect() {
+              const spinner = document.getElementById("spinner");
+              const connectButton = document.getElementById("connect-button");
+              spinner.style.display = "block";
+  
+              setTimeout(() => {
+                spinner.style.display = "none";
+                connectButton.style.display = "block";
+              }, 20000); // 20 segundos
+            }
+  
+            async function connectClone() {
+              const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${newVmId}&node=${node}`;
+              window.open(url, "_blank");
+            }
+  
+            const cloneCreated = await createClone();
+            if (cloneCreated) {
+              const cloneStarted = await startClone();
+              if (cloneStarted) {
+                showSpinnerAndConnect();
+                const connectBtn = document.getElementById("connect-button");
+                connectBtn.onclick = connectClone;
+              }
+            }
+          }
+        </script>
+      </head>
+      <body>
+        <h1>Gerenciador de VMs</h1>
+        
+              <div class="vm-container">
+                <p>VM: monitor (ID: 100)</p>
+                <div class="vm-buttons">
+                  <button onclick="startLab('100', 'prox1', 'monitor')">Iniciar Laboratório</button>
+                  <div id="spinner" class="spinner"></div>
+                  <button id="connect-button">Conectar</button>
+                </div>
+              </div>
+            
+      </body>
+      </html>
+    
