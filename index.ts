@@ -71,6 +71,26 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+// Endpoint para retornar os logs em formato JSON
+app.get("/logs", (req: Request, res: Response) => {
+  fs.readFile(logFilePath, "utf8", (err, data) => {
+    if (err) {
+      console.error("Erro ao ler o log:", err);
+      return res.status(500).json({ error: "Erro ao ler o log." });
+    }
+
+    const logs = data
+      .split("\n")
+      .filter((line) => line.trim() !== "")
+      .map((line) => {
+        const [timestamp, client, route, status] = line.split(" - ");
+        return { timestamp, client, route, status };
+      });
+
+    res.json({ logs });
+  });
+});
+
 // Endpoint para salvar HTMLs
 app.post("/save-html", (req: Request, res: Response) => {
   const { filename, content } = req.body;
