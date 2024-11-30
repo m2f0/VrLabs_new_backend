@@ -10,13 +10,78 @@ const logFilePath = path.join(__dirname, "logs.txt");
 
 const port = 3000;
 
+// Configurações da API do Proxmox
+const PROXMOX_API_URL = "https://prox.nnovup.com.br/api2/json";
+const PROXMOX_TOKEN = "14931bf6-55b0-4631-823c-03ad70b553da"; // Token de autenticação
+const PROXMOX_USER = "apiuser@pve!apitoken";
+
+// Definição do tipo para logs do Proxmox
+interface ProxmoxLog {
+  time: string; // Data e hora do log
+  node: string; // Nome do node
+  service: string; // Serviço relacionado ao log
+  pid: string; // ID do processo
+  user: string; // Nome do usuário
+  severity: string; // Severidade do log
+  message: string; // Mensagem do log
+}
+
+// Substituição do fetch para suportar ESM
+const fetch = async (url: string, options?: any) => {
+  const { default: fetch } = await import("node-fetch");
+  return fetch(url, options);
+};
+
+// Função para autenticar e buscar logs do cluster
+const fetchClusterLogs = async (): Promise<ProxmoxLog[]> => {
+  try {
+    const response = await fetch(`${PROXMOX_API_URL}/cluster/log`, {
+      method: "GET",
+      headers: {
+        Authorization: `PVEAPIToken=${PROXMOX_USER}=${PROXMOX_TOKEN}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Erro ao buscar logs do Proxmox: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+    // Mapeando os dados para preencher campos ausentes com "N/A"
+    return (data as { data: ProxmoxLog[] }).data.map((log) => ({
+      time: log.time || "N/A",
+      node: log.node || "N/A",
+      service: log.service || "N/A",
+      pid: log.pid || "N/A",
+      user: log.user || "N/A",
+      severity: log.severity || "N/A",
+      message: log.message || "N/A",
+    }));
+  } catch (error) {
+    console.error("Erro ao buscar logs do cluster:", error);
+    throw error;
+  }
+};
+
+// Novo Endpoint para logs do Proxmox
+app.get("/logs", async (req: Request, res: Response) => {
+  try {
+    const logs = await fetchClusterLogs();
+    res.json({ logs });
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao buscar logs do cluster." });
+  }
+});
+
 // Configura o Express para servir arquivos estáticos
 app.use("/HTMLs", express.static(directoryPath));
 
 // Middleware para CORS
 app.use(
   cors({
-    origin: "https://gckyrp-3000.csb.app", // Origem ajustada
+    origin: "https://gckyrp-3000.csb.app", // Ajuste a origem conforme necessário
   })
 );
 
@@ -69,26 +134,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   };
 
   next();
-});
-
-// Endpoint para retornar os logs em formato JSON
-app.get("/logs", (req: Request, res: Response) => {
-  fs.readFile(logFilePath, "utf8", (err, data) => {
-    if (err) {
-      console.error("Erro ao ler o log:", err);
-      return res.status(500).json({ error: "Erro ao ler o log." });
-    }
-
-    const logs = data
-      .split("\n")
-      .filter((line) => line.trim() !== "")
-      .map((line) => {
-        const [timestamp, client, route, status] = line.split(" - ");
-        return { timestamp, client, route, status };
-      });
-
-    res.json({ logs });
-  });
 });
 
 // Endpoint para salvar HTMLs
@@ -184,5 +229,5 @@ app.get("/", (req, res) => {
 
 // Inicializar o servidor
 app.listen(port, () => {
-  console.log(`Sandbox listening on port ${port}`);
+  console.log(`Servidor rodando na porta ${port}`);
 });
