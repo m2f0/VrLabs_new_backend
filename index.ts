@@ -15,7 +15,7 @@ app.use("/HTMLs", express.static(directoryPath));
 // Middleware para CORS
 app.use(
   cors({
-    origin: "https://mp9rks-3000.csb.app", // Permite apenas o frontend especificado
+    origin: "https://gckyrp-3000.csb.app/", // Permite apenas o frontend especificado
   })
 );
 
