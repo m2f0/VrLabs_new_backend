@@ -26,7 +26,7 @@ interface ProxmoxLog {
   message: string; // Mensagem do log
 }
 
-// Substituição do fetch para suportar ESM
+// Substituição do fetch
 const fetch = async (url: string, options?: any) => {
   const { default: fetch } = await import("node-fetch");
   return fetch(url, options);
@@ -49,29 +49,51 @@ const fetchClusterLogs = async (): Promise<ProxmoxLog[]> => {
     }
 
     const data = await response.json();
-    // Mapeando os dados para preencher campos ausentes com "N/A"
-    return (data as { data: ProxmoxLog[] }).data.map((log) => ({
-      time: log.time || "N/A",
-      node: log.node || "N/A",
-      service: log.service || "N/A",
-      pid: log.pid || "N/A",
-      user: log.user || "N/A",
-      severity: log.severity || "N/A",
-      message: log.message || "N/A",
-    }));
+    return (
+      (data as { data: ProxmoxLog[] }).data.map((log) => ({
+        time: log.time || "N/A",
+        node: log.node || "N/A",
+        service: log.service || "N/A",
+        pid: log.pid || "N/A",
+        user: log.user || "N/A",
+        severity: log.severity || "N/A",
+        message: log.message || "N/A",
+      })) || []
+    );
   } catch (error) {
     console.error("Erro ao buscar logs do cluster:", error);
     throw error;
   }
 };
 
-// Novo Endpoint para logs do Proxmox
-app.get("/logs", async (req: Request, res: Response) => {
+app.get("/logs", async (req, res) => {
   try {
-    const logs = await fetchClusterLogs();
+    const response = await fetch(`${PROXMOX_API_URL}/nodes/prox1/tasks`, {
+      method: "GET",
+      headers: {
+        Authorization: `PVEAPIToken=${PROXMOX_USER}=${PROXMOX_TOKEN}`,
+      },
+    });
+
+    const data = await response.json();
+    const logs = data.data.map((log) => ({
+      startTime: log.starttime
+        ? new Date(log.starttime * 1000).toLocaleString()
+        : "N/A",
+      endTime: log.endtime
+        ? new Date(log.endtime * 1000).toLocaleString()
+        : "N/A",
+      node: log.node || "N/A",
+      user: log.user || "N/A",
+      service: log.service || "N/A",
+      severity: log.severity || "N/A",
+      message: log.message || "N/A",
+    }));
+
     res.json({ logs });
   } catch (error) {
-    res.status(500).json({ error: "Erro ao buscar logs do cluster." });
+    console.error("Erro ao buscar logs:", error);
+    res.status(500).json({ error: "Erro ao buscar logs." });
   }
 });
 
@@ -229,5 +251,5 @@ app.get("/", (req, res) => {
 
 // Inicializar o servidor
 app.listen(port, () => {
-  console.log(`Servidor rodando na porta ${port}`);
+  console.log(`Sandbox listening on port ${port}`);
 });
