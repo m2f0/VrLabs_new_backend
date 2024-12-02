@@ -16,7 +16,18 @@ app.use("/HTMLs", express.static(directoryPath));
 // Middleware para CORS
 app.use(
   cors({
-    origin: "https://ld2yy9-3000.csb.app/", // Ajuste a origem conforme necessário
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        "https://ld2yy9-3000.csb.app",
+        "https://jm7xgg-3000.csb.app",
+      ];
+      if (!origin || allowedOrigins.includes(origin)) {
+        // Se `origin` é undefined ou está na lista, permita o acesso
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
   })
 );
 
