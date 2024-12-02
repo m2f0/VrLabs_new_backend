@@ -16,7 +16,7 @@ app.use("/HTMLs", express.static(directoryPath));
 // Middleware para CORS
 app.use(
   cors({
-    origin: "https://gckyrp-3000.csb.app", // Ajuste a origem conforme necessário
+    origin: "https://ld2yy9-3000.csb.app/", // Ajuste a origem conforme necessário
   })
 );
 
