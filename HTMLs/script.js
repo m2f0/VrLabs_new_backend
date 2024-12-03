@@ -18,13 +18,18 @@ async function makeRequest(url, method, body = null) {
   try {
     console.log("Enviando requisição:", { url, options });
     const response = await fetch(url, options);
-    console.log("Resposta recebida:", response);
 
     if (!response.ok) {
-      throw new Error(`Erro na solicitação: ${response.status}`);
+      const errorText = await response.text();
+      console.error("Erro no conteúdo da resposta:", errorText);
+      throw new Error(
+        `Erro na solicitação: ${response.status} - ${response.statusText}`
+      );
     }
 
-    return response.json(); // Retorna JSON, se aplicável
+    const jsonData = await response.json();
+    console.log("Dados retornados:", jsonData);
+    return jsonData;
   } catch (error) {
     console.error("Erro na requisição:", error);
     alert(`Erro na solicitação: ${error.message}`);
@@ -54,6 +59,7 @@ async function createLab(vmid, node, name) {
     alert("Solicitação enviada! Verifique no Proxmox o status da operação.");
   } catch (error) {
     console.error("Erro ao criar laboratório:", error);
+    alert("Erro ao criar laboratório. Verifique os logs.");
   }
 }
 
@@ -66,6 +72,7 @@ async function startVM(vmid, node) {
     alert("Solicitação enviada para iniciar a VM.");
   } catch (error) {
     console.error("Erro ao iniciar a VM:", error);
+    alert("Erro ao iniciar a VM. Verifique os logs.");
   }
 }
 
@@ -78,10 +85,31 @@ async function stopVM(vmid, node) {
     alert("Solicitação enviada para parar a VM.");
   } catch (error) {
     console.error("Erro ao parar a VM:", error);
+    alert("Erro ao parar a VM. Verifique os logs.");
   }
 }
 
-function connectVM(vmid, node) {
-  const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}`;
-  window.open(url, "_blank");
+async function connectVM(vmid, node) {
+  try {
+    const response = await makeRequest(
+      `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
+      "POST"
+    );
+
+    const { ticket, port } = response.data;
+
+    const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&resize=off&port=${port}&vncticket=${encodeURIComponent(
+      ticket
+    )}`;
+    window.open(url, "_blank");
+  } catch (error) {
+    console.error("Erro ao conectar à VM:", error);
+    alert("Erro ao conectar à VM. Verifique os logs.");
+  }
 }
+
+// Expondo as funções ao escopo global
+window.createLab = createLab;
+window.startVM = startVM;
+window.stopVM = stopVM;
+window.connectVM = connectVM;
