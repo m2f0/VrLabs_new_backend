@@ -91,6 +91,7 @@ async function stopVM(vmid, node) {
 
 async function connectVM(vmid, node) {
   try {
+    // Obtém o ticket e a porta usando o endpoint `vncproxy`
     const response = await makeRequest(
       `${API_BASE_URL}/api2/json/nodes/${node}/qemu/${vmid}/vncproxy`,
       "POST"
@@ -98,9 +99,15 @@ async function connectVM(vmid, node) {
 
     const { ticket, port } = response.data;
 
+    console.log("Ticket obtido:", ticket);
+    console.log("Porta do VNC:", port);
+
+    // Constrói a URL com os parâmetros necessários
     const url = `${API_BASE_URL}/?console=kvm&novnc=1&vmid=${vmid}&node=${node}&resize=off&port=${port}&vncticket=${encodeURIComponent(
       ticket
     )}`;
+
+    // Abre o console noVNC em uma nova janela
     window.open(url, "_blank");
   } catch (error) {
     console.error("Erro ao conectar à VM:", error);
