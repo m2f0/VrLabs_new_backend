@@ -1,0 +1,78 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Teste do Código do Linked Clone</title>
+          <style>
+            body { font-family: Arial, sans-serif; background-color: #1e1e2f; color: white; }
+            .button { font-size: 16px; padding: 10px; margin: 5px; }
+            .start { background-color: #4CAF50; color: white; }
+            .connect { background-color: #2196F3; color: white; }
+          </style>
+        </head>
+        <body>
+          
+            <button class="button start" onclick="startLinkedClone('3100', 'prox', '3100-CLONE')">
+              Iniciar 3100-CLONE
+            </button>
+            <button class="button connect" onclick="connectVM('3100', 'prox')">
+              Conectar 3100-CLONE
+            </button>
+          
+          <script>
+            // Função para iniciar uma VM
+            window.startLinkedClone = function (vmid, node, name) {
+              const ticket = getCookie("PVEAuthCookie");
+              const csrfToken = getCookie("CSRFPreventionToken");
+  
+              if (!ticket || !csrfToken) {
+                alert("Erro: Credenciais não encontradas. Refaça a autenticação.");
+                return;
+              }
+  
+              fetch(`https://prox.nnovup.com.br/api2/json/nodes/${node}/qemu/${vmid}/status/start`, {
+                method: "POST",
+                headers: {
+                  "CSRFPreventionToken": csrfToken,
+                  Authorization: `PVEAuthCookie=${ticket}`,
+                },
+                body: null, // Envia um corpo vazio
+              })
+                .then((response) => {
+                  if (!response.ok) {
+                    throw new Error(`Erro ao iniciar a VM: ${response.statusText}`);
+                  }
+                  alert(`VM ${name} iniciada com sucesso!`);
+                })
+                .catch((error) => {
+                  console.error("Erro ao iniciar a VM:", error);
+                  alert("Erro ao iniciar a VM. Verifique os logs.");
+                });
+            };
+  
+            // Função para conectar a uma VM
+            window.connectVM = function (vmid, node) {
+              const ticket = getCookie("PVEAuthCookie");
+  
+              if (!ticket) {
+                alert("Erro: Ticket de autenticação não encontrado.");
+                return;
+              }
+  
+              const url = `https://prox.nnovup.com.br/?console=kvm&novnc=1&vmid=${vmid}&node=${node}`;
+              document.cookie = `PVEAuthCookie=${ticket}; path=/; Secure; SameSite=None`;
+              window.open(url, "_blank");
+            };
+  
+            // Função para obter os cookies
+            function getCookie(name) {
+              const value = `; ${document.cookie}`;
+              const parts = value.split(`; ${name}=`);
+              if (parts.length === 2) return parts.pop().split(";").shift();
+            }
+          </script>
+        </body>
+        </html>
+      

@@ -21,6 +21,7 @@ app.use(
         "https://ld2yy9-3000.csb.app",
         "https://jm7xgg-3000.csb.app",
         "https://vrlabs.nnovup.com.br",
+        "https://fq5n66-3000.csb.app",
       ];
       if (!origin || allowedOrigins.includes(origin)) {
         // Se `origin` é undefined ou está na lista, permita o acesso
