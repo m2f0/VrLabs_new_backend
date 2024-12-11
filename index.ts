@@ -20,6 +20,7 @@ app.use(
       const allowedOrigins = [
         "https://ld2yy9-3000.csb.app",
         "https://jm7xgg-3000.csb.app",
+        "https://vrlabs.nnovup.com.br",
       ];
       if (!origin || allowedOrigins.includes(origin)) {
         // Se `origin` é undefined ou está na lista, permita o acesso
